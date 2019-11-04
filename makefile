@@ -1,0 +1,73 @@
+#Makefile
+
+CC            = gcc
+CXX           = g++
+DEFINES       = -D_ENABLE_PCAP
+CFLAGS        = -pipe -g -Wall -W $(DEFINES)
+CXXFLAGS      = -pipe -g -Wall -W $(DEFINES) -std=c++11
+AR            = ar cqs
+LINK          = g++
+DEL_FILE      = rm -f
+SYMLINK       = ln -f -s
+DEL_DIR       = rmdir
+MOVE          = mv -f
+CHK_DIR_EXISTS= test -d
+MKDIR         = mkdir -p
+
+### target
+DEPEND_PATH   =
+AOTAIN_PATH   =
+PUSH_ROOT	  = ./
+
+LIBS 		  =  -lz -lrt -lpthread \
+		     -L/usr/local/lib -lrdkafka -lrdkafka++ \
+		     /root/test/flowmonitor/deps/libpcap/lib/libpcap.a  \
+
+INCPATH       = -I. -I./include \
+		-I/usr/local/kafka/include \
+		-I/usr/local/libpcap/include
+
+SRC_DIR 	  = ./src
+OBJECTS_DIR	  = $(PUSH_ROOT)/objs
+BIN_DIR 	  = $(PUSH_ROOT)/bin
+TARGET 		  = $(BIN_DIR)/flowmonitor
+
+
+### code
+SOURCES 		= $(wildcard *.c *.cpp)
+#OBJS 			= $(patsubst %.c,%.o, $(patsubst %.cpp,%.o, $(SOURCES)))
+
+### more objs
+OBJS 			= 	$(OBJECTS_DIR)/main.o \
+					$(OBJECTS_DIR)/http_parse.o \
+					$(OBJECTS_DIR)/packet_sniffer.o \
+					$(OBJECTS_DIR)/sysapp.o \
+					$(OBJECTS_DIR)/sysconfig.o \
+					$(OBJECTS_DIR)/SysLog.o \
+
+
+
+### Task list
+all: app
+
+### Build rules
+app: $(TARGET)
+
+$(TARGET): $(OBJECTS_DIR) $(OBJS)
+	@$(CHK_DIR_EXISTS) $(BIN_DIR)/ || $(MKDIR) $(BIN_DIR)/
+	-$(DEL_FILE) $(TARGET)
+	$(LINK) -o $(TARGET) $(OBJS) $(LIBS)
+
+$(OBJECTS_DIR):
+		$(CHK_DIR_EXISTS) $@ || mkdir -p $@
+
+$(OBJECTS_DIR)/%.o: $(SRC_DIR)/%.cpp
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o "$@" "$<"
+
+
+.PHONY: clean
+
+clean:
+	-$(DEL_FILE) $(OBJS)
+	-$(DEL_FILE) *~ core *.core
+
